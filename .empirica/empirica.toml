@@ -1,0 +1,9 @@
+name = "async-empirica"
+
+[tajriba.auth]
+srtoken = "qyAgFFZORAIjvbLQ"
+
+[[tajriba.auth.users]]
+name = "Admin"
+username = "admin"
+password = "xPKJJmtV"

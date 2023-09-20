@@ -1,0 +1,137 @@
+factors:
+  - name: playerCount
+    desc: playerCount determines the number of Players are in a Game.
+    values:
+      - value: 1
+      - value: 2
+      - value: 3
+      - value: 5
+      - value: 8
+      - value: 13
+      - value: 10
+      - value: 20
+  - name: question
+    desc: question that is to be selected for the game/batch
+    values:
+      - value: politics
+      - value: economics
+      - value: sports
+  - name: numgam
+    values:
+      - value: 5
+  - name: communication
+    desc: method of communication. chat vs numerical
+    values:
+      - value: chat
+      - value: numerical
+  - name: config
+    desc: test file for a json config containing questions and prepopulated statements
+    values:
+      - value:
+          questions:
+            - Question Text One
+            - Question Text Two
+          statements:
+            - Pre statement one
+            - Pre statment two
+            - Pre statment three
+            - Pre statment four
+            - Pre statment five
+      - value:
+          questions:
+            - Question text one. Answer this?
+            - Question text two. What day is it?
+            - Question text three. Are you having fun yet?
+          statements:
+            - I like Beef
+            - I Hate Beef
+            - My Name Is Set
+            - you are clever
+            - briliant app
+            - testing the array of a string
+            - please yes work
+  - name: questions
+    desc: "%% seperated string of all questions."
+    values:
+      - value: This is a question about sports? How are you?%%This is a questions about economics? What's your favourite colour?%%This is a question about politics? Is it raining today?
+      - value: This is a question about sports? How are you?&&<h1 ><strong>Title Sports</strong><br /></h1><p><em>Message</em><br />This is a test string</p>%%This is a questions about economics? What's your favourite colour?&&<h1 ><strong>Title Econ</strong><br /></h1><p><em>Message</em><br />This is a test string</p>%%This is a question about politics? Is it raining today?&&<h1 ><strong>Title Politics</strong><br /></h1><p><em>Message</em><br />This is a test string</p>
+  - name: numberPreComments
+    desc: number of commentsto be made before social features can be unlocked.
+    values:
+      - value: 2
+      - value: 5
+  - name: numberPreVotes
+    desc: number of votes be made before social features can be unlocked.
+    values:
+      - value: 3
+      - value: 5
+  - name: prePopulatedComments
+    desc: field contating an stringified array of strings, each string is a comment for the intro steps.
+    values:
+      - value: Sports Comment One%%Sports Comment Two%%Sports Comment Three%%Sports Comment Four%%Sports Comment Five%%Sports Comment Six%%Sports Comment Seven##Economics Comment One%%Economics Comment Two%%Economics Comment Three%%Economics Comment Four%%Economics Comment Five%%Economics Comment Six%%Economics Comment Seven##Politics Comment One%%Politics Comment Two%%Politics Comment Three%%Politics Comment Four%% Politics Comment Five%%Politics Comment Six%%Politics Comment Seven
+      - value: I like Beef%%I Hate Beef%%My Name Is Set%%you are clever%%briliant app%%testing the array of a string%%please yes work
+  - name: endDate
+    desc: "date time string. format: YYYY-MM-DDTHH:mm:ss.sssZ"
+    values:
+      - value: 2023-05-04T13:50:00
+      - value: 2025-06-20T13:50:00
+  - name: scoreSheet
+    values:
+      - value:
+          "1":
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 7
+            - 8
+          "2":
+            - 30
+            - 40
+            - 50
+            - 2
+            - 3
+            - 4
+            - 5
+            - 32
+          "3":
+            - 3
+            - 2
+            - 4
+            - 5
+            - 7
+            - 9
+            - 5
+            - 6
+          "4":
+            - 5
+            - 4
+            - 3
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+          "5":
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+            - 4
+            - 3
+      - value: '"{"mix": { "30 :: 70": [23, 0, 0, 21, 0, 0]}}"'
+treatments:
+  - name: 10 player
+    factors:
+      communication: chat
+      endDate: 2025-06-20T13:50:00
+      numberPreComments: 2
+      numberPreVotes: 3
+      numgam: 5
+      playerCount: 10
+      prePopulatedComments: Sports Comment One%%Sports Comment Two%%Sports Comment Three%%Sports Comment Four%%Sports Comment Five%%Sports Comment Six%%Sports Comment Seven##Economics Comment One%%Economics Comment Two%%Economics Comment Three%%Economics Comment Four%%Economics Comment Five%%Economics Comment Six%%Economics Comment Seven##Politics Comment One%%Politics Comment Two%%Politics Comment Three%%Politics Comment Four%% Politics Comment Five%%Politics Comment Six%%Politics Comment Seven
+      questions: This is a question about sports? How are you?&&<h1 ><strong>Title Sports</strong><br /></h1><p><em>Message</em><br />This is a test string</p>%%This is a questions about economics? What's your favourite colour?&&<h1 ><strong>Title Econ</strong><br /></h1><p><em>Message</em><br />This is a test string</p>%%This is a question about politics? Is it raining today?&&<h1 ><strong>Title Politics</strong><br /></h1><p><em>Message</em><br />This is a test string</p>
