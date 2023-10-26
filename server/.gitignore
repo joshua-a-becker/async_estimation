@@ -2,3 +2,6 @@ trigger
 node_modules
 modd.conf
 dist
+
+server/src/sensitive.js
+.src/sensitive.js

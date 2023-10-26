@@ -1,7 +1,130 @@
 import { ClassicListenersCollector } from "@empirica/core/admin/classic"
 export const Empirica = new ClassicListenersCollector()
 
-Empirica.onGameStart(({ game }) => {})
+Empirica.onGameStart(({ game }) => {
+  cron.schedule(
+    "* * * * *", // <-- running every minute "30 13 * * *", running at exactly 13:30
+    () => {
+      if (!game) {
+        return
+      }
+
+      checkForUnreadMessages(game)
+      checkForUnseenComments(game)
+      checkMedianChange(game)
+
+      console.log("check changes complete")
+
+      const verifiedPlayers = game.players.filter(
+        (_player) => _player.get("verifiedStatus") === true
+      )
+
+      verifiedPlayers.forEach((_player) => {
+        const unreadArray = _player.get("hasUnreadMessages")
+        // unreadArray.forEach((question, index) => {
+        //   if (question) {
+        //     console.log(
+        //       `${_player.get(
+        //         "nickname"
+        //       )} you have unread messages from question ${index + 1}`
+        //     )
+        //   }
+        // })
+
+        const unseenComments = _player.get("unseenComments")
+        const medianDifferent = _player.get("medianDifferent")
+
+        console.log(`Median array: ${medianDifferent}`)
+        console.log(`Comments array: ${unseenComments}`)
+        console.log(`Messages array: ${unreadArray}`)
+
+        const medianUpdateText = medianDifferent.reduce((acc, _diff, index) => {
+          if (_diff) {
+            return `${acc} \n - Your community has updated their estimates for question ${
+              index + 1
+            }`
+          }
+
+          return `${acc}`
+        }, "")
+
+        const chatUpdateText = unreadArray.reduce((acc, _number, index) => {
+          if (_number > 0) {
+            return `${acc}\n - ${_number} new messages in Question ${index + 1}`
+          }
+
+          return `${acc}`
+        }, "")
+
+        const commentsUpdateText = unseenComments.reduce(
+          (acc, _number, index) => {
+            if (_number > 0) {
+              return `${acc}\n - ${_number} new comments in Question ${
+                index + 1
+              }`
+            }
+
+            return `${acc}`
+          },
+          ""
+        )
+
+        const updates =
+          chatUpdateText.length +
+            commentsUpdateText.length +
+            medianUpdateText.length >
+          0
+
+        const encryptedId = _player.get("encryptedId")
+        const username = _player.get("nickname")
+        console.log(encryptedId)
+        const url = `http://64.227.30.245:3000/?participantKey=${encryptedId}`
+        const emailAddress = _player.get("emailAddress")
+        console.log(emailAddress)
+        if (url === undefined || emailAddress === undefined) {
+          console.log(
+            "!!!!!!!!!!!!!!!!!!!!!!!!! THIS IS IN THE CRON JOB GUARD CLAUSE !!!!!!!!!!!!!!!!!!"
+          )
+          return
+        }
+
+        console.log("****** PASSED THE CRON JOB RETURN *****************")
+
+        if (updates) {
+          const updateBody = `Hey ${username},\nYour forecasting portal has updates! Please click your magic link below to see the following: ${chatUpdateText} ${commentsUpdateText} ${medianUpdateText}\n Use this magic link to access your forecasting portal:\n ${url}`
+
+          console.log(`update body: ${updateBody}`)
+
+          sendUpdateEmail(url, emailAddress, updateBody, username, updates)
+
+          return
+        }
+
+        const emailBody = `Hey ${username},\nThings are a little slow around the office today, there are no updates to your forecasting portal!  Help to spark discussion by adding some new comments, or connecting with your fellow forecasters in the chatroom.\nAccess your forecasting portal any time using this magic link:\n${url}`
+
+        console.log(`email body: ${emailBody}`)
+        sendUpdateEmail(url, emailAddress, emailBody, username, updates)
+      })
+    },
+    {
+      scheduled: true,
+      timezone: "Europe/London",
+    }
+  )
+  console.log("game started")
+  const endDate = new Date(game.get("treatment").endDate)
+  const currentDate = new Date(endDate)
+  console.log(`endDate: ${endDate} | seconds: ${endDate.getTime()}`)
+  console.log(`currentDate: ${currentDate} | seconds: ${currentDate.getTime()}`)
+  const duration = Math.floor(
+    (currentDate.getTime() - new Date().getTime()) / 1000
+  )
+  console.log(`++++++++ duration of game: ${duration}++++++`)
+  const round = game.addRound({ name: "Game" })
+  round.addStage({ name: "Conversation", duration: duration }) //604800
+  const round2 = game.addRound({ name: "FinalEstimate" })
+  round2.addStage({ name: "FinalEstimate", duration: 86400 })
+})
 
 Empirica.onRoundStart(({ round }) => {})
 
@@ -224,12 +347,12 @@ Empirica.on("player", (ctx, { player }) => {
     }, [])
 
     batch.addGame([
-      // {
-      //   key: "startingPlayerId",
-      //   value: player.id,
-      // },
+      {
+        key: "startingPlayerId",
+        value: player.id,
+      },
       { key: "treatment", value: selectedTreatment.treatment },
-      { key: "messaes", value: messagesObject },
+      { key: "messages", value: messagesObject },
       { key: "comments", value: prePopulatedComments },
       { key: "timeStamp", value: new Date().getTime() },
     ])
@@ -251,6 +374,112 @@ Empirica.on("player", (ctx, { player }) => {
     `${selectedTreatment.treatmentName}PlayerCount`,
     selectedPlayerCount + 1
   )
+})
+
+Empirica.on("player", "gameID", function (ctx, { player }) {
+  console.log("player:gameID was called now")
+  // player.set("joinEmailSent", false)
+  // if (!player.get("joinEmailSent")) {
+  //   nodemailSend(player.get("nickname"))
+  //   player.set("joinEmailSent", true)
+  // }
+
+  // console.log("email should have sent")
+
+  // console.log(player.currentGame)
+  player.currentGame.start()
+
+  // this is GOLD
+  const initialSeenComments = player.currentGame
+    .get("treatment")
+    .questions.reduce((accumulator, _q, index) => {
+      return {
+        ...accumulator,
+        [index]: [],
+      }
+    }, {})
+
+  // console.log("!!!!!!!!!!! INTITIAL SEEN COMMENTS OBJECT !!!!!!!")
+  // console.log(initialSeenComments)
+  !player.get("seenComments") && player.set("seenComments", initialSeenComments)
+})
+
+Empirica.on("player", "sendMagicLink", function (ctx, { player }) {
+  console.log("!!!!!!!!!!!!! Sending magic link email !!!!!!!!!!")
+  if (!player.get("sendMagicLink")) {
+    return
+  }
+
+  const encryptedId = player.get("encryptedId")
+  console.log(encryptedId)
+  const url = `http://64.227.30.245:3000/?participantKey=${encryptedId}`
+  const emailAddress = player.get("emailAddress")
+  console.log(emailAddress)
+  if (url === undefined || emailAddress === undefined) {
+    player.set("sendMagicLink", true)
+    return
+  }
+  sendURLEmail(url, emailAddress)
+  console.log({
+    From: "joshua.becker@ucl.ac.uk",
+    To: emailAddress,
+    Subject: "asynchronous empirica",
+    TextBody: `Your magic link is: ${url}`,
+  })
+  player.set("sendMagicLink", false)
+  return
+})
+
+Empirica.on("player", "nickname", function (ctx, { player }) {
+  const nickname = player.get("nickname")
+  const game = player.currentGame
+
+  let gameMessages = game.get("messages")
+  game.get("treatment").questions.forEach((_treatment, index) => {
+    gameMessages[index] = [
+      ...gameMessages[index],
+      {
+        text: `${nickname} has joined the game`,
+        author: "system",
+        nickname: "",
+        timeStamp: new Date().getTime(),
+      },
+    ]
+  })
+
+  game.set("messages", gameMessages)
+
+  return
+})
+
+Empirica.on("player", "sendVerification", function (ctx, { player }) {
+  console.log("!!!!!!!!!!!!! Sending verification email !!!!!!!!!!")
+  if (!player.get("sendVerification")) {
+    return
+  }
+
+  console.log(player.get("verifiedStatus"))
+
+  if (player.get("verifiedStatus") === true) {
+    return
+  }
+
+  const verificationCode = player.get("verificationCode")
+  const emailAddress = player.get("emailAddress")
+  console.log(emailAddress)
+  if (verificationCode === undefined || emailAddress === undefined) {
+    player.set("sendVerification", true)
+    return
+  }
+  sendVerificationEmail(verificationCode, emailAddress)
+  console.log({
+    From: "joshua.becker@ucl.ac.uk",
+    To: emailAddress,
+    Subject: "asynchronous empirica",
+    TextBody: `Your verification code is: ${verificationCode}`,
+  })
+  player.set("sendVerification", false)
+  return
 })
 
 function shuffleArray(array) {
@@ -289,5 +518,108 @@ function sendUpdateEmail(url, emailAddress, emailBody, username, hasUpdates) {
       ? `${username} your forecasting portal has updates!`
       : `${username}, update your forecasting portal!`,
     TextBody: `${emailBody}`,
+  })
+}
+
+function checkMedianChange(game) {
+  const indexes = game.get("treatment").questions.reduce((acc, _q, index) => {
+    return [...acc, index]
+  }, [])
+
+  const gameMedians = game.get("gameMedians")
+  console.log("game medians:")
+  Object.entries(gameMedians).forEach(([key, value]) =>
+    console.log(`${key}: ${value}`)
+  )
+
+  game.players.forEach((_player) => {
+    const seenMedians = _player.get("seenMedians")
+    const medianDiff = indexes.reduce((acc, idx) => {
+      if (gameMedians[`${idx}`] === undefined) {
+        return [...acc, false]
+      }
+
+      if (seenMedians[`${idx}`] === undefined) {
+        return [...acc, true]
+      }
+
+      if (seenMedians[`${idx}`] !== gameMedians[`${idx}`]) {
+        return [...acc, true]
+      }
+
+      return [...acc, false]
+    }, [])
+
+    _player.set("medianDifferent", medianDiff)
+  })
+}
+
+function checkForUnseenComments(game) {
+  const indexes = game.get("treatment").questions.reduce((acc, _q, index) => {
+    return [...acc, index]
+  }, [])
+
+  const gameComments = game.get("comments")
+
+  // const gameComments = Object.entries(game.get("comments")).map(
+  //   ([key, value]) => {
+  //     return value.length
+  //   }
+  // )
+
+  game.players.forEach((_player) => {
+    const seenComments = _player.get("seenComments")
+    const unseenComments = indexes.reduce((acc, idx) => {
+      if (gameComments[`${idx}`] === undefined) {
+        return [...acc, 0]
+      }
+
+      if (seenComments[`${idx}`] === undefined) {
+        return [...acc, gameComments[`${idx}`].length]
+      }
+
+      return [
+        ...acc,
+        gameComments[`${idx}`].length - seenComments[`${idx}`].length,
+      ]
+    }, [])
+
+    _player.set("unseenComments", unseenComments)
+  })
+}
+
+function checkForUnreadMessages(game) {
+  const indexes = game.get("treatment").questions.reduce((acc, _q, index) => {
+    return [...acc, index]
+  }, [])
+
+  game.players.forEach((_player) => {
+    const _lastSeenObj = _player.get("lastSeenMessages")
+    const gameMessages = game.get("messages")
+    // console.log("game messages", gameMessages)
+    // console.log(_player.get("nickname"), _lastSeenObj)
+    const unreadObj = indexes.reduce((_acc, idx) => {
+      const _lastMessage = _lastSeenObj ? _lastSeenObj[idx] : undefined
+      // console.log(_lastMessage)
+      if (_lastMessage === undefined) {
+        return [..._acc, game.get("messages")?.[`${idx}`].length || 0]
+      }
+      const unreadMessages = game
+        .get("messages")
+        ?.[`${idx}`].filter(
+          (_message) => _message.timeStamp > _lastMessage.timeStamp
+        )
+
+      // console.log(unreadMessages)
+
+      if (unreadMessages.length > 0) {
+        return [..._acc, unreadMessages.length]
+      }
+
+      return [..._acc, 0]
+    }, [])
+
+    console.log("unread messages", unreadObj)
+    _player.set("hasUnreadMessages", unreadObj)
   })
 }

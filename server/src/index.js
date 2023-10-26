@@ -13,7 +13,6 @@ import { Empirica } from "./callbacks"
 const argv = minimist(process.argv.slice(2), { string: ["token"] })
 
 setLogLevel(argv["loglevel"] || "info")
-
 ;(async () => {
   const ctx = await AdminContext.init(
     argv["url"] || "http://localhost:3000/query",
@@ -24,10 +23,8 @@ setLogLevel(argv["loglevel"] || "info")
     classicKinds
   )
 
-  ctx.register(Classic({ disableAssignment: true, disableGameCreation: true }))
-
   ctx.register(ClassicLoader)
-  ctx.register(Classic())
+  ctx.register(Classic({ disableAssignment: true, disableGameCreation: true }))
   ctx.register(Lobby())
   ctx.register(Empirica)
   ctx.register(function (_) {
